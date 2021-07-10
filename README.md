@@ -6,14 +6,14 @@ Example commands are given from the perspective of running Ubuntu
 
 ## System Requirements
 
-- EC2: T3 Micro Instance or better
+- EC2: T4 Micro Instance or better
 - IP: A clear-net routing node should get a fairly static IP
 - OS: Ubuntu is pretty common, any OS
 - PORT: 9735 will be the standard P2P port, 10009 the standard gRPC port
 - DISK: 25 GB+ (on AWS select the io2 storage and at least 200 IOPs)
 
 - *Note: EC2 will only give you 5 IPs per region*
-- *Note: When creating an EC2 instance you'll have to add rules to it's security group that allow access to ports 9735 and 10009*
+- *Note: When creating an EC2 instance you'll have to add rules to its security group that allow access to ports 9735 and 10009*
 
 ### Disk:
 
@@ -31,7 +31,7 @@ If on EC2:
 sudo chmod 600 ~/PATH_TO_PEM_FILE 
 ```
 
-Add an Elastic IP and associate it with the node
+[Add an Elastic IP] and associate it with the node
 
 Connect:
 
@@ -111,6 +111,8 @@ sudo chown `whoami` /blockchain
 Setup a local firewall:
 
 ```shell
+# Check if UFW is installed
+which ufw
 sudo ufw logging on
 sudo ufw enable
 # PRESS Y
@@ -165,7 +167,7 @@ sudo gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | sudo apt-key add -
 sudo apt update && sudo apt install -y tor deb.torproject.org-keyring
 
 # Add a user for Tor
-sudo usermod -a -G debian-tor ubuntu
+sudo usermod -a -G debian-tor `whoami`
 ```
 
 Then configure Tor:
@@ -211,7 +213,7 @@ cd bitcoin/
 ./autogen.sh 
 ./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768" --enable-cxx --with-zmq --without-gui --disable-shared --with-pic --disable-tests --disable-bench --enable-upnp-default --disable-wallet
 # This may take a while
-make
+make -j "$(($(nproc)+1))"
 sudo make install
 ```
 
@@ -390,7 +392,7 @@ You can check if Go is installed and what version it is, and then install or upd
 
 ```shell
 go version
-# Should show Go version 1.15.7 or higher
+# Should show Go version 1.16.5 or higher
 
 # If an out of date Go is already installed
 sudo rm -rf /usr/local/go
@@ -399,13 +401,13 @@ sudo rm -rf /usr/local/go
 sudo apt-get update && sudo apt-get -y upgrade
 
 # Download Go
-wget https://golang.org/dl/go1.15.7.linux-amd64.tar.gz
+wget https://golang.org/dl/go1.16.5.linux-amd64.tar.gz
 
 # Extract it
-sudo tar -xvf go1.15.7.linux-amd64.tar.gz
+sudo tar -xvf go1.16.5.linux-amd64.tar.gz
 
 # Install it and remove the download
-sudo mv go /usr/local && rm go1.15.7.linux-amd64.tar.gz
+sudo mv go /usr/local && rm go1.16.5.linux-amd64.tar.gz
 
 # On a new install, make a directory for it
 mkdir ~/go
@@ -436,8 +438,8 @@ sudo apt-get install -y build-essential
 cd ~/
 git clone https://github.com/lightningnetwork/lnd.git
 cd lnd
-git checkout v0.12.0-beta
-make && make install tags="autopilotrpc chainrpc experimental invoicesrpc routerrpc signrpc walletrpc watchtowerrpc wtclientrpc"
+git checkout v0.13.0-beta
+make && make install tags="autopilotrpc chainrpc invoicesrpc routerrpc signrpc walletrpc watchtowerrpc wtclientrpc"
 mkdir ~/.lnd
 emacs ~/.lnd/lnd.conf
 ```
@@ -457,6 +459,9 @@ allow-circular-route=1
 
 # Public hex color
 color=#000000
+
+# Reduce the cooperative close chain fee
+coop-close-target-confs=1000
 
 # Log levels
 debuglevel=CNCT=debug,CRTR=debug,HSWC=debug,NTFN=debug,RPCS=debug
@@ -479,6 +484,9 @@ max-channel-fee-allocation=1.0
 
 # Set the max timeout blocks of a payment
 max-cltv-expiry=5000
+
+# Allow commitment fee to rise on anchor channels
+max-commit-fee-rate-anchors=100
 
 # Pending channel limit
 maxpendingchannels=10
@@ -541,8 +549,6 @@ bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333
 protocol.wumbo-channels=1
 
 [routerrpc]
-# Make sure that LND is the binary release or built with the routerrpc tag
-
 # Set default chance of a hop success
 routerrpc.apriorihopprob=0.5
 
@@ -687,6 +693,7 @@ If you're using testnet, here are some faucets:
 - [Coinfaucet]
 - [YABTF]
 
+[Add an Elastic IP]: https://www.cloudbooklet.com/how-to-assign-an-elastic-ip-address-to-your-ec2-instance-in-aws/
 [Bitcoin Core auth script]: https://github.com/bitcoin/bitcoin/blob/master/share/rpcauth/rpcauth.py
 [Bitcoin Core data directory]: https://en.bitcoin.it/wiki/Data_directory
 [Coinfaucet]: https://coinfaucet.eu/en/btc-testnet/
